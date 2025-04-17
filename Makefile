@@ -3,8 +3,8 @@
 # Authors: Santiago Romaní, Pere Millán
 # Date: April 2021, March 2022-2024, February-March 2025
 #-------------------------------------------------------------------------------
-#	Programador/a 1: xxx.xxx@estudiants.urv.cat
-#	Programador/a 2: yyy.yyy@estudiants.urv.cat
+#	Programador/a 1: alex@estudiants.urv.cat
+#	Programador/a 2: guillem@estudiants.urv.cat
 #-------------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------------
