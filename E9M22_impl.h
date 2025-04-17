@@ -1,121 +1,111 @@
-#-------------------------------------------------------------------------------
-# Example Makefile to build a library and to test the functions of each module
-# Authors: Santiago Romaní, Pere Millán
-# Date: April 2021, March 2022-2024, February-March 2025
-#-------------------------------------------------------------------------------
-#	Programador/a 1: xxx.xxx@estudiants.urv.cat
-#	Programador/a 2: yyy.yyy@estudiants.urv.cat
-#-------------------------------------------------------------------------------
-
-#-------------------------------------------------------------------------------
-# options for code generation
-#-------------------------------------------------------------------------------
-ARCH	:= -march=armv5te -mlittle-endian
-INCL    := -I./include
-ASFLAGS	:= $(ARCH) $(INCL) -g
-CCFLAGS	:= -Wall -gdwarf-3 -O0 $(ARCH) $(INCL)
-LDFLAGS := -z max-page-size=0x8000 
-
-#-------------------------------------------------------------------------------
-# make commands
-#-------------------------------------------------------------------------------
-tota_1a_part_practica_FC : libE9M22.a demo_pi.elf demo_CelsFahr.elf demo_E9M22.elf test_CelsiusFahrenheit.elf test_E9M22.elf 
-    #$(warning Recorda: aquest Makefile esta incomplet. Completa les regles faltants!! ... i esborra aquest warning.)
-	@echo "Compilació completada."
-
-build/demo_pi.o: source/demo_pi.s include/E9M22.i include/E9M22_impl.i
-	arm-none-eabi-as $(ASFLAGS) -c source/demo_pi.s -o build/demo_pi.o
-
-demo_pi.elf : build/demo_pi.o libE9M22.a
-	arm-none-eabi-ld $(LDFLAGS) build/demo_pi.o p_lib/startup.o \
-					libE9M22.a p_lib/libfoncompus.a -o demo_pi.elf
+/*-----------------------------------------------------------------
+|   Selecció implementació (C/ARM) rutines de coma flotant E9M22.
+|	HA DE COINCIDIR amb el seleccionat a E9M22_impl.i.
+| -----------------------------------------------------------------
+|	pere.millan@urv.cat
+|	(Març 2025)
+| ----------------------------------------------------------------
+|	Programador/a 1: xxx.xxx@estudiants.urv.cat
+|	Programador/a 2: yyy.yyy@estudiants.urv.cat
+|-----------------------------------------------------------------*/
 
 
-build/demo_E9M22.o : source/demo_E9M22.c include/E9M22.h include/E9M22_impl.h
-	arm-none-eabi-gcc $(CCFLAGS) -c source/demo_E9M22.c -o build/demo_E9M22.o
-
-demo_E9M22.elf : build/demo_E9M22.o libE9M22.a
-	arm-none-eabi-ld $(LDFLAGS) build/demo_E9M22.o p_lib/startup.o \
-					libE9M22.a p_lib/libfoncompus.a -o demo_E9M22.elf
+#ifndef E9M22_IMPL_H
+#define E9M22_IMPL_H
 
 
-build/demo_CelsFahr.o: source/demo_CelsFahr.s include/E9M22.i include/E9M22_impl.i
-	arm-none-eabi-as $(ASFLAGS) -c source/demo_CelsFahr.s -o build/demo_CelsFahr.o
-    
-
-demo_CelsFahr.elf : build/demo_CelsFahr.o libE9M22.a
-	arm-none-eabi-ld $(LDFLAGS) build/demo_CelsFahr.o p_lib/startup.o \
-					libE9M22.a p_lib/libfoncompus.a -o demo_CelsFahr.elf
-    
+//#########################################################
+// Cal deixar descomentada la versió de rutina a utilitzar
+//#########################################################
 
 
-build/CelsiusFahrenheit_c.o : source/CelsiusFahrenheit_c.c include/E9M22.h include/E9M22_impl.h
-	arm-none-eabi-gcc $(CCFLAGS) -c source/CelsiusFahrenheit_c.c -o build/CelsiusFahrenheit_c.o
+/******************************************************/
+/* Rutines de CONVERSIÓ de valors E9M22 <-> float/int */
+/******************************************************/
 
-build/CelsiusFahrenheit_s.o: source/CelsiusFahrenheit_s.s include/E9M22.i include/E9M22_impl.i
-	arm-none-eabi-as $(ASFLAGS) -c source/CelsiusFahrenheit_s.s -o build/CelsiusFahrenheit_s.o
+//#define E9M22_to_float	E9M22_to_float_c_	// Versió en C
+#define E9M22_to_float	E9M22_to_float_s	// Versió assemblador
 
+//#define float_to_E9M22	float_to_E9M22_c_	// Versió en C
+#define float_to_E9M22	float_to_E9M22_s	// Versió assemblador
 
-#-------------------------------------------------------------------------------
-# libE9M22 making commands
-#-------------------------------------------------------------------------------
-libE9M22.a: build/E9M22_c.o build/E9M22_s.o build/E9M22_aux.o 
-	arm-none-eabi-ar -rs libE9M22.a build/E9M22_s.o build/E9M22_c.o build/E9M22_aux.o 
+//#define E9M22_to_int	E9M22_to_int_c_	// Versió en C
+#define E9M22_to_int	E9M22_to_int_s	// Versió assemblador
 
-build/E9M22_c.o : source/E9M22_c.c include/E9M22.h include/E9M22_impl.h 
-	arm-none-eabi-gcc $(CCFLAGS) -c source/E9M22_c.c -o build/E9M22_c.o
-
-build/E9M22_s.o: source/E9M22_s.s include/E9M22.i include/E9M22_impl.i
-	arm-none-eabi-as $(ASFLAGS) -c source/E9M22_s.s -o build/E9M22_s.o
-
-build/E9M22_aux.o: source/E9M22_aux.s 
-	arm-none-eabi-as $(ASFLAGS) -c source/E9M22_aux.s -o build/E9M22_aux.o
+//#define int_to_E9M22	int_to_E9M22_c_	// Versió en C
+#define int_to_E9M22	int_to_E9M22_s	// Versió assemblador
 
 
-#-------------------------------------------------------------------------------
-# test making commands
-#-------------------------------------------------------------------------------
-test_CelsiusFahrenheit.elf : build/test_CelsiusFahrenheit.o build/CelsiusFahrenheit_c.o libE9M22.a 
-	arm-none-eabi-ld $(LDFLAGS) build/test_CelsiusFahrenheit.o build/CelsiusFahrenheit_c.o p_lib/startup.o \
-					libE9M22.a p_lib/libfoncompus.a -o test_CelsiusFahrenheit.elf
+/*************************************************/
+/* Operacions ARITMÈTIQUES en Coma Flotant E9M22 */
+/*************************************************/
 
-build/test_CelsiusFahrenheit.o : tests/test_CelsiusFahrenheit.c include/E9M22.h include/CelsiusFahrenheit.h 
-	arm-none-eabi-gcc $(CCFLAGS) -c tests/test_CelsiusFahrenheit.c -o build/test_CelsiusFahrenheit.o
+//#define E9M22_add	E9M22_add_c_	// Versió en C
+#define E9M22_add	E9M22_add_s	// Versió assemblador
 
+//#define E9M22_sub	E9M22_sub_c_	// Versió en C
+#define E9M22_sub	E9M22_sub_s	// Versió assemblador
 
-test_E9M22.elf : build/test_E9M22.o libE9M22.a
-	arm-none-eabi-ld $(LDFLAGS) build/test_E9M22.o p_lib/startup.o \
-					libE9M22.a p_lib/libfoncompus.a -o test_E9M22.elf
-    # Regla completada para generar el ejecutable de prueba test_E9M22.elf
+//#define E9M22_mul	E9M22_mul_c_	// Versió en C
+#define E9M22_mul	E9M22_mul_s	// Versió assemblador
 
+//#define E9M22_div	E9M22_div_c_	// Versió en C
+#define E9M22_div	E9M22_div_s	// Versió assemblador
 
-build/test_E9M22.o : tests/test_E9M22.c include/E9M22_impl.h
-	arm-none-eabi-gcc $(CCFLAGS) -c tests/test_E9M22.c -o build/test_E9M22.o
-    # Regla completada para compilar el archivo .c en un objeto .o
+//#define E9M22_neg	E9M22_neg_c_	// Versió en C
+#define E9M22_neg	E9M22_neg_s	// Versió assemblador
 
-
-
-#-------------------------------------------------------------------------------
-# clean commands
-#-------------------------------------------------------------------------------
-clean : 
-	@rm -fv build/*
-	@rm -fv *.elf
-	@rm -fv libE9M22.a
+//#define E9M22_abs	E9M22_abs_c_	// Versió en C
+#define E9M22_abs	E9M22_abs_s	// Versió assemblador
 
 
-#-----------------------------------------------------------------------------
-# run commands
-#-----------------------------------------------------------------------------
-run : demo_pi.elf	demo_CelsFahr.elf	demo_E9M22.elf
-	arm-eabi-insight demo_pi.elf &
-    # arm-eabi-insight demo_CelsFahr.elf &
-    # arm-eabi-insight demo_E9M22.elf &
+/*************************************************************/
+/* Operacions de COMPARACIÓ de números en Coma Flotant E9M22 */
+/*************************************************************/
+
+//#define E9M22_are_eq	E9M22_are_eq_c_	// Versió en C
+#define E9M22_are_eq	E9M22_are_eq_s	// Versió assemblador
+
+//#define E9M22_are_ne	E9M22_are_ne_c_	// Versió en C
+#define E9M22_are_ne	E9M22_are_ne_s	// Versió assemblador
+
+//#define E9M22_are_unordered		E9M22_are_unordered_c_	// Versió en C
+#define E9M22_are_unordered		E9M22_are_unordered_s	// Versió assemblador
+
+//#define E9M22_is_gt		E9M22_is_gt_c_	// Versió en C
+#define E9M22_is_gt		E9M22_is_gt_s	// Versió assemblador
+
+//#define E9M22_is_ge		E9M22_is_ge_c_	// Versió en C
+#define E9M22_is_ge		E9M22_is_ge_s	// Versió assemblador
+
+//#define E9M22_is_lt		E9M22_is_lt_c_	// Versió en C
+#define E9M22_is_lt		E9M22_is_lt_s	// Versió assemblador
+
+//#define E9M22_is_le		E9M22_is_le_c_	// Versió en C
+#define E9M22_is_le		E9M22_is_le_s	// Versió assemblador
 
 
-#-----------------------------------------------------------------------------
-# debug commands
-#-----------------------------------------------------------------------------
-debug : test_CelsiusFahrenheit.elf	test_E9M22.elf 
-    # arm-eabi-insight test_CelsiusFahrenheit.elf &
-    # arm-eabi-insight test_E9M22.elf &
+/**********************************************************/
+/* Funcions auxiliars: NORMALITZACIÓ i ARRODONIMENT E9M22 */
+/**********************************************************/
+
+//#define E9M22_normalize_and_round		E9M22_normalize_and_round_c_	// Versió en C
+#define	E9M22_normalize_and_round	E9M22_normalize_and_round_s	// Versió assemblador
+
+//#define E9M22_round		E9M22_round_c_	// Versió en C
+#define	E9M22_round	E9M22_round_s	// Versió assemblador
+
+
+/****************************************************************/
+/* Funcions AUXILIARS per treballar amb els bits de codificació */
+/****************************************************************/
+
+//#define count_leading_zeros		count_leading_zeros_c_	// Versió en C
+#define	count_leading_zeros	count_leading_zeros_s	// Versió assemblador
+
+//#define count_trailing_zeros		count_trailing_zeros_c_	// Versió en C
+#define	count_trailing_zeros	count_trailing_zeros_s	// Versió assemblador
+
+
+
+#endif /* E9M22_IMPL_H */
